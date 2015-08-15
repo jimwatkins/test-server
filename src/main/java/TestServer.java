@@ -16,8 +16,12 @@ import org.vertx.java.platform.Verticle;
 
 public class TestServer extends Verticle {
 
+	private String verticalID = "unintialized";
+	private static int verticalCount = 0;
+	
     @Override
     public void start() {
+    	initId();
     }
 	
 	
@@ -28,14 +32,47 @@ public class TestServer extends Verticle {
     @Override
     public void start(final Future<Void> result) {
     	start();
-    	System.out.println("Starting Verticle");
-    	
-    	
-    	
+    	logMessage("\nStarting Verticle: " + verticalID);
+
+    	beginLoggedStep("load configuration");
+        JsonObject config = container.config(); // service-config.json
+        final int port = Integer.valueOf(config.getString("port"));  
+        final int sleep = Integer.valueOf(config.getString("sleep")); 
+        finishLoggedStep();
+       	
+        beginLoggedStep("Starting http server");
+		vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
+			public void handle(HttpServerRequest req) {
+				try {
+					Thread.sleep(sleep);
+				} catch (InterruptedException e) {
+				}
+				req.response().sendFile("index.html");
+			}
+		}).listen(port);
+		finishLoggedStep();
     	
     	result.setResult(null);
- 
+	
+    }
+    
+    private synchronized void initId() {
+    	verticalCount++;
     	
+    	verticalID = Integer.toString(verticalCount);
+    }
+    
+    
+    private final void beginLoggedStep(String stepName) {
+    	logMessage("\n["+ verticalID + "] " + "Starting " + stepName + "...");
+    }
+
+    private final void finishLoggedStep() {
+    	logMessage("complete\n");
+    }
+    
+    private final void logMessage(String msg) {
+    	System.out.print(msg);
     }
 	
 	
