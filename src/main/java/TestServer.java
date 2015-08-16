@@ -1,4 +1,6 @@
 
+import java.util.UUID;
+
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
@@ -17,7 +19,6 @@ import org.vertx.java.platform.Verticle;
 public class TestServer extends Verticle {
 
 	private String verticalID = "unintialized";
-	private static volatile int verticalCount = 0;
 	private int sleep;
 	
     /**
@@ -56,10 +57,11 @@ public class TestServer extends Verticle {
     }
     
     private static String initId() {
-    	synchronized (Verticle.class) {
-	    	verticalCount++;
-	    	logMessage("Incrementing verticalCount: " + verticalCount, "0");
-	    	return Integer.toString(verticalCount);
+    	synchronized (TestServer.class) {
+    		UUID id = UUID.randomUUID();
+    		String sid = id.toString().substring(0, 6);
+	    	logMessage("Generating vertical id: " + sid, "0");
+	    	return sid;
     	}
     }
     
