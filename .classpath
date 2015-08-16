@@ -8,5 +8,6 @@
 	<classpathentry exported="true" kind="con" path="org.springsource.ide.eclipse.gradle.classpathcontainer"/>
 	<classpathentry exported="true" kind="src" path="/vertx-core"/>
 	<classpathentry exported="true" kind="src" path="/vertx-platform"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/vert.x"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

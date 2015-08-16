@@ -19,6 +19,7 @@ public class TestServer extends Verticle {
 	private String verticalID = "unintialized";
 	private static int verticalCount = 0;
 	
+	
     @Override
     public void start() {
     	initId();
@@ -32,15 +33,17 @@ public class TestServer extends Verticle {
     @Override
     public void start(final Future<Void> result) {
     	start();
-    	logMessage("\nStarting Verticle: " + verticalID);
+    	logMessage("Starting Verticle: " + verticalID);
 
-    	beginLoggedStep("load configuration");
+    	String step = "load configuration";
+    	beginLoggedStep(step);
         JsonObject config = container.config(); // service-config.json
         final int port = Integer.valueOf(config.getString("port"));  
         final int sleep = Integer.valueOf(config.getString("sleep")); 
-        finishLoggedStep();
+        finishLoggedStep(step);
        	
-        beginLoggedStep("Starting http server");
+        step = "create http server";
+        beginLoggedStep(step);
 		vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
 			public void handle(HttpServerRequest req) {
 				try {
@@ -50,7 +53,7 @@ public class TestServer extends Verticle {
 				req.response().sendFile("index.html");
 			}
 		}).listen(port);
-		finishLoggedStep();
+		finishLoggedStep(step);
     	
     	result.setResult(null);
 	
@@ -58,21 +61,21 @@ public class TestServer extends Verticle {
     
     private synchronized void initId() {
     	verticalCount++;
-    	
+    	logMessage("Incrementing verticalCount: " + verticalCount);
     	verticalID = Integer.toString(verticalCount);
     }
     
     
     private final void beginLoggedStep(String stepName) {
-    	logMessage("\n["+ verticalID + "] " + "Starting " + stepName + "...");
+    	logMessage("Beginning " + stepName + "...");
     }
 
-    private final void finishLoggedStep() {
-    	logMessage("complete\n");
+    private final void finishLoggedStep(String step) {
+    	logMessage(step + " complete");
     }
     
     private final void logMessage(String msg) {
-    	System.out.print(msg);
+    	System.out.print("\n["+ verticalID + "] " + msg);
     }
 	
 	
