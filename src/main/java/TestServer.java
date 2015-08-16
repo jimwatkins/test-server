@@ -17,65 +17,82 @@ import org.vertx.java.platform.Verticle;
 public class TestServer extends Verticle {
 
 	private String verticalID = "unintialized";
-	private static int verticalCount = 0;
-	
-	
-    @Override
-    public void start() {
-    	initId();
-    }
-	
+	private static volatile int verticalCount = 0;
+	private int sleep;
 	
     /**
      * Start method to bootstrap the vert.x
      */
 
     @Override
-    public void start(final Future<Void> result) {
-    	start();
-    	logMessage("Starting Verticle: " + verticalID);
+//    public void start(final Future<Void> result) {
+    public void start() {
+    	verticalID = initId();
+    	logMessage("Starting Verticle: " + verticalID, verticalID);
 
     	String step = "load configuration";
-    	beginLoggedStep(step);
+    	beginLoggedStep(step, verticalID);
         JsonObject config = container.config(); // service-config.json
         final int port = Integer.valueOf(config.getString("port"));  
-        final int sleep = Integer.valueOf(config.getString("sleep")); 
-        finishLoggedStep(step);
+        sleep = Integer.valueOf(config.getString("sleep")); 
+        finishLoggedStep(step, verticalID);
        	
         step = "create http server";
-        beginLoggedStep(step);
-		vertx.createHttpServer().requestHandler(new Handler<HttpServerRequest>() {
-			public void handle(HttpServerRequest req) {
-				try {
-					Thread.sleep(sleep);
-				} catch (InterruptedException e) {
-				}
-				req.response().sendFile("index.html");
-			}
-		}).listen(port);
-		finishLoggedStep(step);
+        beginLoggedStep(step, verticalID);
+        HttpServer server = vertx.createHttpServer();
+        RouteMatcher routeMatcher = new RouteMatcher();
+        
+        routeMatcher.getWithRegEx(".*", getHandler());
+        server.setAcceptBacklog(10000);
+        server.requestHandler(routeMatcher).listen(port);
+
+		finishLoggedStep(step, verticalID);
     	
-    	result.setResult(null);
+//    	result.setResult(null);
+    	
+//    	logMessage("Exiting container", verticalID);
+//    	container.exit();
 	
     }
     
-    private synchronized void initId() {
-    	verticalCount++;
-    	logMessage("Incrementing verticalCount: " + verticalCount);
-    	verticalID = Integer.toString(verticalCount);
+    private static String initId() {
+    	synchronized (Verticle.class) {
+	    	verticalCount++;
+	    	logMessage("Incrementing verticalCount: " + verticalCount, "0");
+	    	return Integer.toString(verticalCount);
+    	}
     }
     
+    private Handler<HttpServerRequest> getHandler() {
+        return request -> {
+            // handle the static content requests
+        	try { Thread.sleep(sleep); } catch (InterruptedException ie) {}
+			request.response().sendFile("index.html");
+			
+//            String[] filePath = request.path().split("/");
+//            if (filePath.length == 3) {
+//                String file = filePath[filePath.length - 1];
+//                request.response().sendFile("webapp/" + file);
+//            }
+//            else {
+//                request.response().setStatusCode(404);
+//                request.response().end();
+//            }
+
+        };
+    }    
     
-    private final void beginLoggedStep(String stepName) {
-    	logMessage("Beginning " + stepName + "...");
+    
+    private static final void beginLoggedStep(String stepName, String vid) {
+    	logMessage("Beginning " + stepName + "...", vid);
     }
 
-    private final void finishLoggedStep(String step) {
-    	logMessage(step + " complete");
+    private static final void finishLoggedStep(String step, String vid) {
+    	logMessage(step + " complete", vid);
     }
     
-    private final void logMessage(String msg) {
-    	System.out.print("\n["+ verticalID + "] " + msg);
+    private static final void logMessage(String msg, String vid) {
+    	System.out.print("\n["+ vid + "] " + msg);
     }
 	
 	
